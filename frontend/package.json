@@ -1,0 +1,53 @@
+{
+  "name": "flashcards-ai-frontend",
+  "private": true,
+  "version": "0.1.0",
+  "type": "module",
+  "description": "Frontend for Flashcards AI - React + TypeScript application",
+  "scripts": {
+    "dev": "vite",
+    "dev:nvm": "nvm use && npm run dev",
+    "build": "tsc -b && vite build",
+    "lint": "eslint .",
+    "lint:fix": "eslint . --fix",
+    "format": "prettier --write .",
+    "format:check": "prettier --check .",
+    "type-check": "tsc --noEmit",
+    "preview": "vite preview",
+    "test": "echo \"No tests yet\" && exit 0"
+  },
+  "dependencies": {
+    "@hookform/resolvers": "^5.0.1",
+    "@tailwindcss/forms": "^0.5.10",
+    "@tailwindcss/postcss": "^4.1.8",
+    "@types/node": "^22.15.28",
+    "axios": "^1.9.0",
+    "lucide-react": "^0.511.0",
+    "prettier": "^3.5.3",
+    "react": "^19.1.0",
+    "react-dom": "^19.1.0",
+    "react-dropzone": "^14.3.8",
+    "react-hook-form": "^7.56.4",
+    "react-hot-toast": "^2.5.2",
+    "react-router-dom": "^7.6.1",
+    "tailwindcss": "^4.1.8",
+    "zod": "^3.25.42",
+    "zustand": "^5.0.5"
+  },
+  "devDependencies": {
+    "@eslint/js": "^9.25.0",
+    "@types/react": "^19.1.2",
+    "@types/react-dom": "^19.1.2",
+    "@vitejs/plugin-react": "^4.4.1",
+    "autoprefixer": "^10.4.21",
+    "eslint": "^9.25.0",
+    "eslint-plugin-react-hooks": "^5.2.0",
+    "eslint-plugin-react-refresh": "^0.4.19",
+    "globals": "^16.0.0",
+    "postcss": "^8.5.4",
+    "prettier-plugin-tailwindcss": "^0.6.12",
+    "typescript": "~5.8.3",
+    "typescript-eslint": "^8.30.1",
+    "vite": "^6.3.5"
+  }
+}
