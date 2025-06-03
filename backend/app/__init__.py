@@ -1,1 +1,0 @@
-# Aplicación Backend de Flashcards AI 
