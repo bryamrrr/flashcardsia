@@ -40,6 +40,7 @@ frontend/.next/
 frontend/out/
 
 # Backend (Python)
+backend/app/__pycache__/*
 backend/__pycache__/
 backend/*.py[cod]
 backend/*$py.class
