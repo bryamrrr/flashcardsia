@@ -1,49 +1,183 @@
-@tailwind base;
-@tailwind components;
-@tailwind utilities;
-
-@import url("https://fonts.googleapis.com/css2?family=Inter:wght@100;200;300;400;500;600;700;800;900&display=swap");
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@100;200;300;400;500;600;700;800;900&display=swap');
+@import 'tailwindcss';
 
 @layer base {
   html {
-    font-family: "Inter", system-ui, sans-serif;
+    font-family: 'Inter', system-ui, sans-serif;
+    scroll-behavior: smooth;
   }
 
   body {
-    @apply bg-gray-50 text-gray-900;
+    background-color: #f9fafb;
+    color: #111827;
   }
 }
 
 @layer components {
   .btn {
-    @apply px-4 py-2 rounded-lg font-medium transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-offset-2;
+    border-radius: 0.5rem;
+    padding: 0.5rem 1rem;
+    font-weight: 500;
+    transition: all 0.2s;
+    outline: none;
+  }
+
+  .btn:focus {
+    ring: 2px;
+    ring-offset: 2px;
   }
 
   .btn-primary {
-    @apply btn bg-primary-600 text-white hover:bg-primary-700 focus:ring-primary-500;
+    background-color: #2563eb;
+    color: white;
+  }
+
+  .btn-primary:hover {
+    background-color: #1d4ed8;
+  }
+
+  .btn-primary:focus {
+    ring-color: #3b82f6;
   }
 
   .btn-secondary {
-    @apply btn bg-secondary-200 text-secondary-800 hover:bg-secondary-300 focus:ring-secondary-500;
+    background-color: #e2e8f0;
+    color: #1e293b;
+    border-radius: 0.5rem;
+    padding: 0.5rem 1rem;
+    font-weight: 500;
+    transition: all 0.2s;
+    outline: none;
+  }
+
+  .btn-secondary:hover {
+    background-color: #cbd5e1;
+  }
+
+  .btn-secondary:focus {
+    ring: 2px;
+    ring-offset: 2px;
+    ring-color: #64748b;
   }
 
   .btn-outline {
-    @apply btn border border-primary-600 text-primary-600 hover:bg-primary-50 focus:ring-primary-500;
+    border: 1px solid #2563eb;
+    color: #2563eb;
+    background: transparent;
+    border-radius: 0.5rem;
+    padding: 0.5rem 1rem;
+    font-weight: 500;
+    transition: all 0.2s;
+    outline: none;
+  }
+
+  .btn-outline:hover {
+    background-color: #eff6ff;
+  }
+
+  .btn-outline:focus {
+    ring: 2px;
+    ring-offset: 2px;
+    ring-color: #3b82f6;
   }
 
   .card {
-    @apply bg-white rounded-xl shadow-sm border border-gray-200 p-6;
+    border-radius: 0.75rem;
+    border: 1px solid #e5e7eb;
+    background-color: white;
+    padding: 1.5rem;
+    box-shadow: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
   }
 
   .input {
-    @apply w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent;
+    width: 100%;
+    border-radius: 0.5rem;
+    border: 1px solid #d1d5db;
+    padding: 0.5rem 0.75rem;
+    outline: none;
+    transition: all 0.2s;
+  }
+
+  .input:focus {
+    border-color: transparent;
+    ring: 2px;
+    ring-color: #3b82f6;
   }
 
   .flashcard {
-    @apply card min-h-[200px] cursor-pointer transition-all duration-300 hover:shadow-md transform hover:scale-105;
+    border-radius: 0.75rem;
+    border: 1px solid #e5e7eb;
+    background-color: white;
+    padding: 1.5rem;
+    box-shadow: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
+    min-height: 200px;
+    transform: scale(1);
+    cursor: pointer;
+    transition: all 0.3s;
+  }
+
+  .flashcard:hover {
+    transform: scale(1.05);
+    box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
   }
 
   .flashcard.flipped {
-    @apply transform rotate-y-180;
+    transform: rotateY(180deg);
+  }
+
+  .bg-grid-pattern {
+    background-image:
+      linear-gradient(to right, #e5e7eb 1px, transparent 1px),
+      linear-gradient(to bottom, #e5e7eb 1px, transparent 1px);
+    background-size: 24px 24px;
+  }
+
+  .feature-icon {
+    animation: float 3s ease-in-out infinite;
+  }
+
+  .hero-gradient {
+    background: linear-gradient(135deg, #3b82f6 0%, #8b5cf6 100%);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+  }
+
+  .glass-effect {
+    background: rgba(255, 255, 255, 0.7);
+    backdrop-filter: blur(10px);
+    border: 1px solid rgba(255, 255, 255, 0.2);
+  }
+}
+
+/* Custom animations */
+@keyframes float {
+  0% {
+    transform: translateY(0px);
+  }
+  50% {
+    transform: translateY(-10px);
+  }
+  100% {
+    transform: translateY(0px);
+  }
+}
+
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+@keyframes slideUp {
+  from {
+    transform: translateY(20px);
+    opacity: 0;
+  }
+  to {
+    transform: translateY(0);
+    opacity: 1;
   }
 }
