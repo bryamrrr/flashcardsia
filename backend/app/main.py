@@ -17,6 +17,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from .services.llm_service import llm_service
 from sqlalchemy.orm import Session
 from starlette import status
+import logging
 
 # Creamos directorio para archivos
 UPLOAD_DIRECTORY = "uploads"
@@ -25,6 +26,8 @@ Path(UPLOAD_DIRECTORY).mkdir(exist_ok=True)
 # Cargar variables de entorno
 load_dotenv()
 
+# Configurar el logger
+logger = logging.getLogger(__name__)
 
 # Abrir y cerrar conexión
 def get_db():
@@ -222,6 +225,80 @@ async def test_llm_integration():
             "error": str(e),
             "test_text_length": len(sample_text)
         }
+
+
+@app.get("/api/generate-flashcards/{document_id}")
+async def generate_flashcards(document_id: int, db: db_dependency):
+    """
+    Endpoint para generar flashcards desde un documento existente
+    """
+    try:
+        # Buscar el documento en la base de datos
+        document = db.query(models.Docs).filter(models.Docs.id_ == document_id).first()
+        
+        if not document:
+            raise HTTPException(
+                status_code=404,
+                detail=f"Documento con ID {document_id} no encontrado"
+            )
+        
+        # Validar que el documento tenga texto
+        if not document.raw_text or not document.raw_text.strip():
+            raise HTTPException(
+                status_code=400,
+                detail="El documento no contiene texto para procesar"
+            )
+        
+        # Generar flashcards usando el servicio LLM
+        result = await llm_service.extract_flashcards(
+            text=document.raw_text,
+            num_pairs=8  # Generar más flashcards para una mejor experiencia
+        )
+        
+        # Verificar si se generaron flashcards correctamente
+        if not result.get("parsed_flashcards"):
+            # Si no se pudo parsear JSON, intentar extraer manualmente
+            raw_content = result.get("content", "")
+            logger.warning(f"Failed to parse flashcards JSON for document {document_id}")
+            
+            return {
+                "success": False,
+                "document_id": document_id,
+                "error": "No se pudieron generar flashcards válidas",
+                "raw_response": raw_content,
+                "usage": result.get("usage", {}),
+                "model": result.get("model", "unknown")
+            }
+        
+        flashcards_data = result["parsed_flashcards"]
+        flashcards = flashcards_data.get("flashcards", [])
+        
+        return {
+            "success": True,
+            "document_id": document_id,
+            "flashcards": flashcards,
+            "total_flashcards": len(flashcards),
+            "document_info": {
+                "text_length": len(document.raw_text),
+                "created_at": document.created_at
+            },
+            "generation_info": {
+                "model": result.get("model"),
+                "tokens_used": result.get("usage", {}).get("total_tokens", 0),
+                "prompt_tokens": result.get("usage", {}).get("prompt_tokens", 0),
+                "completion_tokens": result.get("usage", {}).get("completion_tokens", 0)
+            }
+        }
+        
+    except HTTPException:
+        # Re-lanzar HTTPExceptions
+        raise
+    except Exception as e:
+        logger.error(f"Error generating flashcards for document {document_id}: {str(e)}")
+        raise HTTPException(
+            status_code=500,
+            detail=f"Error interno generando flashcards: {str(e)}"
+        )
 
 
 # TODO: Agregar routers para:

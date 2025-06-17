@@ -40,3 +40,82 @@
 .read-the-docs {
   color: #888;
 }
+
+@import 'tailwindcss';
+
+/* Estilos existentes */
+.glass-effect {
+  backdrop-filter: blur(12px);
+  background: rgba(255, 255, 255, 0.9);
+}
+
+.bg-grid-pattern {
+  background-image:
+    linear-gradient(rgba(0, 0, 0, 0.1) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(0, 0, 0, 0.1) 1px, transparent 1px);
+  background-size: 20px 20px;
+}
+
+.hero-gradient {
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  background-clip: text;
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+}
+
+.text-primary-600 {
+  color: #667eea;
+}
+
+.feature-icon {
+  transition: transform 0.3s ease;
+}
+
+.group:hover .feature-icon {
+  transform: translateY(-4px);
+}
+
+/* Nuevos estilos para flashcards 3D */
+.preserve-3d {
+  transform-style: preserve-3d;
+}
+
+.backface-hidden {
+  backface-visibility: hidden;
+}
+
+.rotate-y-180 {
+  transform: rotateY(180deg);
+}
+
+/* Animaciones de delay para loading dots */
+.animation-delay-200 {
+  animation-delay: 0.2s;
+}
+
+.animation-delay-400 {
+  animation-delay: 0.4s;
+}
+
+/* Hover effects para las flashcards */
+.flashcard-front,
+.flashcard-back {
+  transition: all 0.3s ease;
+}
+
+.flashcard-front:hover,
+.flashcard-back:hover {
+  transform: translateY(-2px);
+}
+
+/* Mejoras de accesibilidad */
+@media (prefers-reduced-motion: reduce) {
+  .preserve-3d,
+  .rotate-y-180,
+  .animate-spin,
+  .animate-pulse {
+    animation: none;
+    transition: none;
+    transform: none;
+  }
+}
