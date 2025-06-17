@@ -7,7 +7,7 @@ import logging
 from typing import Any, Dict, List, Optional
 
 import openai
-from config import settings
+from ..config import settings
 
 # Configurar logging
 logging.basicConfig(level=logging.INFO)
@@ -99,7 +99,7 @@ class LLMService:
             Dict con las flashcards extraídas y metadatos
         """
         if not prompt_template:
-            from prompts.flashcard_prompts import EXTRACT_QA_PAIRS_PROMPT
+            from ..prompts.flashcard_prompts import EXTRACT_QA_PAIRS_PROMPT
             prompt_template = EXTRACT_QA_PAIRS_PROMPT
             
         formatted_prompt = prompt_template.format(

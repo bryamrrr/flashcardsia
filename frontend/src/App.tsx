@@ -1,14 +1,130 @@
-import { useState } from 'react';
+import { useState, useRef } from 'react';
 import {
   BrainIcon,
-  BookOpenIcon,
   TrendingUpIcon,
   SparklesIcon,
+  UploadIcon,
+  CheckCircleIcon,
+  AlertCircleIcon,
 } from 'lucide-react';
 import './App.css';
 
+interface UploadResponse {
+  success: boolean;
+  document_id: number;
+  filename: string;
+  file_type: string;
+  text_length: number;
+  message: string;
+}
+
 function App() {
-  const [isLoading] = useState(false);
+  const [isLoading, setIsLoading] = useState(false);
+  const [uploadedFile, setUploadedFile] = useState<File | null>(null);
+  const [uploadResult, setUploadResult] = useState<UploadResponse | null>(null);
+  const [error, setError] = useState<string | null>(null);
+  const [isDragOver, setIsDragOver] = useState(false);
+  const fileInputRef = useRef<HTMLInputElement>(null);
+
+  const handleFileSelect = (file: File) => {
+    // Validar tipo de archivo
+    const allowedTypes = ['application/pdf', 'text/plain'];
+    const allowedExtensions = ['pdf', 'txt'];
+    const fileExtension = file.name.toLowerCase().split('.').pop();
+
+    if (
+      !allowedTypes.includes(file.type) &&
+      !allowedExtensions.includes(fileExtension || '')
+    ) {
+      setError(
+        'Tipo de archivo no soportado. Solo se permiten archivos PDF y TXT.'
+      );
+      return;
+    }
+
+    // Validar tamaño (máximo 10MB)
+    if (file.size > 10 * 1024 * 1024) {
+      setError('El archivo es demasiado grande. Máximo 10MB.');
+      return;
+    }
+
+    setUploadedFile(file);
+    setError(null);
+    setUploadResult(null);
+  };
+
+  const handleDragOver = (e: React.DragEvent) => {
+    e.preventDefault();
+    setIsDragOver(true);
+  };
+
+  const handleDragLeave = (e: React.DragEvent) => {
+    e.preventDefault();
+    setIsDragOver(false);
+  };
+
+  const handleDrop = (e: React.DragEvent) => {
+    e.preventDefault();
+    setIsDragOver(false);
+
+    const files = Array.from(e.dataTransfer.files);
+    if (files.length > 0) {
+      handleFileSelect(files[0]);
+    }
+  };
+
+  const handleFileInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const files = e.target.files;
+    if (files && files.length > 0) {
+      handleFileSelect(files[0]);
+    }
+  };
+
+  const uploadDocument = async () => {
+    if (!uploadedFile) {
+      setError('Por favor selecciona un archivo primero.');
+      return;
+    }
+
+    setIsLoading(true);
+    setError(null);
+
+    try {
+      const formData = new FormData();
+      formData.append('file', uploadedFile);
+
+      const response = await fetch(
+        'http://localhost:8000/api/upload-document',
+        {
+          method: 'POST',
+          body: formData,
+        }
+      );
+
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.detail || 'Error subiendo el archivo');
+      }
+
+      const result: UploadResponse = await response.json();
+      setUploadResult(result);
+      console.log('Documento subido exitosamente:', result);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Error desconocido');
+      console.error('Error uploading document:', err);
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const resetUpload = () => {
+    setUploadedFile(null);
+    setUploadResult(null);
+    setError(null);
+    if (fileInputRef.current) {
+      fileInputRef.current.value = '';
+    }
+  };
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-indigo-50 via-white to-purple-50">
@@ -100,23 +216,107 @@ function App() {
               ¿Listo para Comenzar?
             </h3>
             <p className="mb-8 text-center text-lg text-blue-100">
-              Sube tu documento y genera flashcards inteligentes con IA.
+              Sube tu documento PDF o TXT y genera flashcards inteligentes con
+              IA.
             </p>
+
             <div className="space-y-6">
-              <div className="group cursor-pointer rounded-xl border-2 border-dashed border-blue-300/50 bg-white/10 p-8 text-center backdrop-blur-sm transition-all hover:border-blue-300 hover:bg-white/20">
-                <BookOpenIcon className="mx-auto mb-4 h-16 w-16 text-blue-200" />
-                <p className="text-lg font-medium text-blue-100">
-                  Arrastra y suelta tu documento aquí
-                </p>
-                <p className="mt-2 text-blue-200">
-                  Soporta archivos TXT, PDF, DOCX y MD
-                </p>
-              </div>
-              <button
-                className="w-full rounded-xl bg-gradient-to-r from-orange-500 to-red-500 px-8 py-4 text-lg font-bold text-white shadow-lg transition-all duration-300 hover:scale-105 hover:from-orange-600 hover:to-red-600 hover:shadow-xl focus:ring-4 focus:ring-orange-300 focus:outline-none"
-                disabled={isLoading}
+              {/* File Upload Area */}
+              <div
+                className={`group cursor-pointer rounded-xl border-2 border-dashed p-8 text-center backdrop-blur-sm transition-all ${
+                  isDragOver
+                    ? 'border-blue-300 bg-white/20'
+                    : uploadedFile
+                      ? 'border-green-300/50 bg-green-500/10'
+                      : 'border-blue-300/50 bg-white/10 hover:border-blue-300 hover:bg-white/20'
+                }`}
+                onDragOver={handleDragOver}
+                onDragLeave={handleDragLeave}
+                onDrop={handleDrop}
+                onClick={() => fileInputRef.current?.click()}
               >
-                {isLoading ? 'Generando Flashcards...' : 'Generar Flashcards'}
+                <input
+                  ref={fileInputRef}
+                  type="file"
+                  accept=".pdf,.txt"
+                  onChange={handleFileInputChange}
+                  className="hidden"
+                />
+
+                {uploadedFile ? (
+                  <div className="space-y-2">
+                    <CheckCircleIcon className="mx-auto h-16 w-16 text-green-300" />
+                    <p className="text-lg font-medium text-green-100">
+                      {uploadedFile.name}
+                    </p>
+                    <p className="text-green-200">
+                      {(uploadedFile.size / 1024 / 1024).toFixed(2)} MB
+                    </p>
+                    <button
+                      onClick={e => {
+                        e.stopPropagation();
+                        resetUpload();
+                      }}
+                      className="text-sm text-blue-200 underline hover:text-white"
+                    >
+                      Seleccionar otro archivo
+                    </button>
+                  </div>
+                ) : (
+                  <div className="space-y-2">
+                    <UploadIcon className="mx-auto h-16 w-16 text-blue-200" />
+                    <p className="text-lg font-medium text-blue-100">
+                      Arrastra y suelta tu documento aquí
+                    </p>
+                    <p className="text-blue-200">o haz clic para seleccionar</p>
+                    <p className="text-sm text-blue-300">
+                      Soporta archivos PDF y TXT (máximo 10MB)
+                    </p>
+                  </div>
+                )}
+              </div>
+
+              {/* Error Message */}
+              {error && (
+                <div className="flex items-center space-x-2 rounded-lg bg-red-500/20 p-4 text-red-200">
+                  <AlertCircleIcon className="h-5 w-5 flex-shrink-0" />
+                  <p>{error}</p>
+                </div>
+              )}
+
+              {/* Success Message */}
+              {uploadResult && (
+                <div className="rounded-lg bg-green-500/20 p-4 text-green-200">
+                  <div className="mb-2 flex items-center space-x-2">
+                    <CheckCircleIcon className="h-5 w-5 flex-shrink-0" />
+                    <p className="font-medium">
+                      ¡Documento procesado exitosamente!
+                    </p>
+                  </div>
+                  <div className="space-y-1 text-sm">
+                    <p>ID del documento: {uploadResult.document_id}</p>
+                    <p>Tipo: {uploadResult.file_type.toUpperCase()}</p>
+                    <p>Texto extraído: {uploadResult.text_length} caracteres</p>
+                  </div>
+                </div>
+              )}
+
+              {/* Generate Button */}
+              <button
+                onClick={uploadDocument}
+                disabled={!uploadedFile || isLoading}
+                className="w-full rounded-xl bg-gradient-to-r from-orange-500 to-red-500 px-8 py-4 text-lg font-bold text-white shadow-lg transition-all duration-300 hover:scale-105 hover:from-orange-600 hover:to-red-600 hover:shadow-xl focus:ring-4 focus:ring-orange-300 focus:outline-none disabled:cursor-not-allowed disabled:opacity-50 disabled:hover:scale-100"
+              >
+                {isLoading ? (
+                  <div className="flex items-center justify-center space-x-2">
+                    <div className="h-5 w-5 animate-spin rounded-full border-b-2 border-white"></div>
+                    <span>Procesando Documento...</span>
+                  </div>
+                ) : uploadResult ? (
+                  'Generar Más Flashcards'
+                ) : (
+                  'Subir y Procesar Documento'
+                )}
               </button>
             </div>
           </div>

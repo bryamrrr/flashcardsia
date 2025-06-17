@@ -7,13 +7,14 @@ from datetime import datetime
 from pathlib import Path
 from typing import Annotated
 
-import models
-from database import engine, session_local
-from documents_class import DocRequest
+from . import models
+from .database import engine, session_local
+from .documents_class import DocRequest
+from .services.document_service import document_service
 from dotenv import load_dotenv
 from fastapi import Depends, FastAPI, File, HTTPException, UploadFile
 from fastapi.middleware.cors import CORSMiddleware
-from services.llm_service import llm_service
+from .services.llm_service import llm_service
 from sqlalchemy.orm import Session
 from starlette import status
 
@@ -91,46 +92,89 @@ async def create_doc(db: db_dependency, doc_request: DocRequest):
     return doc_model
 
 
-@app.post("/api/documents_files", status_code=status.HTTP_201_CREATED)
-async def create_doc_upload(db: db_dependency, file: UploadFile = File()):
-    """Endpoint de creación de nuevo documento con subida de archivos"""
-    # Leemos contenido
-    content = await file.read()
-    # Validamos extensión
-    allowed_types = ["text/plain"]
-    if file.content_type not in allowed_types:
-        raise HTTPException(
-            status_code=400, detail=f"Tipo de archivo {file.content_type} no permitido"
-        )
-    # Generamos nuevo nombre para guardarlo Disco > 1MG (por defecto)
-    file_extension = file.filename.split(".")[-1]
-    unique_filename = f"content_{file.filename}+{file_extension}"
-    file_path = os.path.join(UPLOAD_DIRECTORY, unique_filename)
-
+@app.post("/api/upload-document", status_code=status.HTTP_201_CREATED)
+async def upload_document(db: db_dependency, file: UploadFile = File(...)):
+    """
+    Endpoint para subir documentos (PDF, TXT) y guardar en base de datos
+    """
     try:
-        with open(file_path, "wb") as buffer:
-            shutil.copyfileobj(file.file, buffer)
-
-        db_doc = models.Docs(
-            raw_text=content.decode("utf-8"), created_at=str(datetime.now().date())
+        # Leer contenido del archivo
+        file_content = await file.read()
+        
+        # Validar que el archivo no esté vacío
+        if not file_content:
+            raise HTTPException(
+                status_code=400, 
+                detail="El archivo está vacío"
+            )
+        
+        # Validar tipos de archivo permitidos
+        allowed_types = ["application/pdf", "text/plain"]
+        file_extension = file.filename.lower().split(".")[-1] if file.filename else ""
+        allowed_extensions = ["pdf", "txt"]
+        
+        if file.content_type not in allowed_types and file_extension not in allowed_extensions:
+            raise HTTPException(
+                status_code=400, 
+                detail=f"Tipo de archivo no soportado. Formatos permitidos: PDF, TXT"
+            )
+        
+        # Procesar el documento y extraer texto
+        processed_doc = document_service.process_document(
+            file_content=file_content,
+            filename=file.filename or "unknown",
+            content_type=file.content_type or ""
         )
-
+        
+        # Validar que se extrajo texto
+        if not processed_doc['text'].strip():
+            raise HTTPException(
+                status_code=400,
+                detail="No se pudo extraer texto del documento"
+            )
+        
+        # Guardar archivo físico (opcional, para respaldo)
+        unique_filename = f"{datetime.now().strftime('%Y%m%d_%H%M%S')}_{file.filename}"
+        file_path = os.path.join(UPLOAD_DIRECTORY, unique_filename)
+        
+        with open(file_path, "wb") as buffer:
+            buffer.write(file_content)
+        
+        # Crear registro en base de datos
+        db_doc = models.Docs(
+            raw_text=processed_doc['text'],
+            created_at=str(datetime.now().date())
+        )
+        
         db.add(db_doc)
         db.commit()
         db.refresh(db_doc)
-
-        return {"id": db_doc.id_, "status_code": 201}
-
+        
+        return {
+            "success": True,
+            "document_id": db_doc.id_,
+            "filename": file.filename,
+            "file_type": processed_doc['file_type'],
+            "text_length": processed_doc['text_length'],
+            "message": "Documento subido y procesado exitosamente"
+        }
+        
+    except HTTPException:
+        # Re-lanzar HTTPExceptions
+        raise
     except Exception as e:
-        # Limpiamos archivos en caso de excepción
-        if os.path.exists(file_path):
+        # Limpiar archivo en caso de error
+        if 'file_path' in locals() and os.path.exists(file_path):
             os.remove(file_path)
+        
         raise HTTPException(
-            status_code=500, detail=f"Error procesando el documento: {str(e)}"
+            status_code=500, 
+            detail=f"Error procesando el documento: {str(e)}"
         )
-
     finally:
-        file.file.close()
+        # Cerrar el archivo
+        if hasattr(file, 'file'):
+            file.file.close()
 
 
 @app.post("/api/test-llm")
