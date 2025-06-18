@@ -3,6 +3,10 @@ FROM node:20-alpine as build
 
 WORKDIR /app
 
+# Recibir variable como build arg
+ARG VITE_API_BASE_URL
+ENV VITE_API_BASE_URL=$VITE_API_BASE_URL
+
 # Copiar archivos de dependencias primero (para mejor cache de Docker)
 COPY package*.json ./
 
