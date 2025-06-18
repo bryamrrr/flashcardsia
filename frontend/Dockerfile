@@ -3,11 +3,11 @@ FROM node:20-alpine as build
 
 WORKDIR /app
 
-# Copiar archivos de dependencias
+# Copiar archivos de dependencias primero (para mejor cache de Docker)
 COPY package*.json ./
 
-# Instalar dependencias
-RUN npm ci --only=production
+# Instalar TODAS las dependencias (incluyendo devDependencies para el build)
+RUN npm ci
 
 # Copiar código fuente
 COPY . .
