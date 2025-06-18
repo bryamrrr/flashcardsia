@@ -8,6 +8,7 @@ import {
   CheckCircleIcon,
   AlertCircleIcon,
 } from 'lucide-react';
+import { buildApiUrl } from '../config/api';
 
 interface UploadResponse {
   success: boolean;
@@ -92,13 +93,10 @@ function HomePage() {
       const formData = new FormData();
       formData.append('file', uploadedFile);
 
-      const response = await fetch(
-        'http://localhost:8000/api/upload-document',
-        {
-          method: 'POST',
-          body: formData,
-        }
-      );
+      const response = await fetch(buildApiUrl('/api/upload-document'), {
+        method: 'POST',
+        body: formData,
+      });
 
       if (!response.ok) {
         const errorData = await response.json();

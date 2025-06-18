@@ -11,7 +11,7 @@ from . import models
 from .database import engine, session_local
 from .documents_class import DocRequest
 from .services.document_service import document_service
-from dotenv import load_dotenv
+from .config import settings
 from fastapi import Depends, FastAPI, File, HTTPException, UploadFile
 from fastapi.middleware.cors import CORSMiddleware
 from .services.llm_service import llm_service
@@ -20,13 +20,11 @@ from starlette import status
 import logging
 
 # Creamos directorio para archivos
-UPLOAD_DIRECTORY = "uploads"
+UPLOAD_DIRECTORY = settings.UPLOAD_DIRECTORY
 Path(UPLOAD_DIRECTORY).mkdir(exist_ok=True)
 
-# Cargar variables de entorno
-load_dotenv()
-
 # Configurar el logger
+logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
 # Abrir y cerrar conexión
@@ -37,52 +35,52 @@ def get_db():
     finally:
         db.close()
 
-
 # Creamos dependecia de la sesión de bd
 db_dependency = Annotated[Session, Depends(get_db)]
 
-
 # Crear instancia de FastAPI
 app = FastAPI(
-    title="Flashcards AI API",
+    title=settings.APP_NAME,
     description="API para generar y gestionar flashcards potenciados por IA",
-    version="1.0.0",
+    version=settings.APP_VERSION,
     docs_url="/api/docs",
     redoc_url="/api/redoc",
 )
+
 # Conectamos a modelo
 models.base.metadata.create_all(bind=engine)
 
-
 # Configurar CORS
-origins = os.getenv("ALLOWED_ORIGINS", "http://localhost:3000").split(",")
-
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=origins,
+    allow_origins=settings.get_cors_origins(),
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
 )
 
-
 @app.get("/")
 async def root():
     """Endpoint raíz"""
-    return {"message": "Bienvenido a Flashcards AI API", "version": "1.0.0"}
-
+    return {
+        "message": f"Bienvenido a {settings.APP_NAME}",
+        "version": settings.APP_VERSION,
+        "environment": settings.ENVIRONMENT
+    }
 
 @app.get("/health")
 async def health_check():
     """Endpoint de verificación de salud"""
-    return {"status": "healthy", "environment": os.getenv("ENVIRONMENT", "development")}
-
+    return {
+        "status": "healthy",
+        "environment": settings.ENVIRONMENT,
+        "version": settings.APP_VERSION
+    }
 
 @app.get("/api/documents", status_code=status.HTTP_200_OK)
 async def read_docs(db: db_dependency):
     """Endpoint para obtener todos los documentos"""
     return db.query(models.Docs).all()
-
 
 @app.post("/api/documents_only_text", status_code=status.HTTP_201_CREATED)
 async def create_doc(db: db_dependency, doc_request: DocRequest):
@@ -93,7 +91,6 @@ async def create_doc(db: db_dependency, doc_request: DocRequest):
     # Refesca base de datos y recupera último registro
     db.refresh(doc_model)
     return doc_model
-
 
 @app.post("/api/upload-document", status_code=status.HTTP_201_CREATED)
 async def upload_document(db: db_dependency, file: UploadFile = File(...)):
@@ -179,7 +176,6 @@ async def upload_document(db: db_dependency, file: UploadFile = File(...)):
         if hasattr(file, 'file'):
             file.file.close()
 
-
 @app.post("/api/test-llm")
 async def test_llm_integration():
     """Endpoint de prueba para la integración con LLM"""
@@ -225,7 +221,6 @@ async def test_llm_integration():
             "error": str(e),
             "test_text_length": len(sample_text)
         }
-
 
 @app.get("/api/generate-flashcards/{document_id}")
 async def generate_flashcards(document_id: int, db: db_dependency):
@@ -299,7 +294,6 @@ async def generate_flashcards(document_id: int, db: db_dependency):
             status_code=500,
             detail=f"Error interno generando flashcards: {str(e)}"
         )
-
 
 # TODO: Agregar routers para:
 # - Autenticación
