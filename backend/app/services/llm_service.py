@@ -4,6 +4,7 @@ Servicio genérico para interacciones con LLM (OpenAI)
 
 import json
 import logging
+import re
 from typing import Any, Dict, List, Optional
 
 import openai
@@ -21,6 +22,39 @@ class LLMService:
         self.client = openai.OpenAI(
             api_key=api_key or settings.OPENAI_API_KEY
         )
+    
+    def _extract_json_from_response(self, content: str) -> str:
+        """
+        Extrae JSON puro de una respuesta que puede estar envuelta en markdown.
+        
+        Args:
+            content: Contenido crudo de la respuesta
+            
+        Returns:
+            JSON string limpio
+        """
+        if not content:
+            return ""
+        
+        # Buscar JSON envuelto en bloques de código markdown
+        json_pattern = r'```(?:json)?\s*(\{.*?\})\s*```'
+        match = re.search(json_pattern, content, re.DOTALL)
+        
+        if match:
+            logger.info("JSON encontrado en bloque de código markdown")
+            return match.group(1).strip()
+        
+        # Si no hay markdown, buscar JSON directo
+        json_pattern_direct = r'(\{.*\})'
+        match_direct = re.search(json_pattern_direct, content, re.DOTALL)
+        
+        if match_direct:
+            logger.info("JSON encontrado directamente")
+            return match_direct.group(1).strip()
+        
+        # Si no se encuentra JSON, devolver el contenido original
+        logger.warning("No se pudo extraer JSON de la respuesta")
+        return content.strip()
         
     async def generate_completion(
         self,
@@ -107,7 +141,7 @@ class LLMService:
             text=text
         )
         
-        system_message = "Eres un asistente experto en educación que crea flashcards efectivas."
+        system_message = "Eres un asistente experto en educación que crea flashcards efectivas. Responde ÚNICAMENTE con JSON válido, sin markdown ni texto adicional."
         
         result = await self.generate_completion(
             prompt=formatted_prompt,
@@ -116,12 +150,28 @@ class LLMService:
         )
         
         try:
+            # Extraer JSON limpio de la respuesta
+            clean_json = self._extract_json_from_response(result["content"])
+            logger.info(f"JSON extraído: {clean_json[:200]}...")
+            
             # Intentar parsear la respuesta JSON
-            parsed_content = json.loads(result["content"])
+            parsed_content = json.loads(clean_json)
             result["parsed_flashcards"] = parsed_content
-            logger.info(f"Successfully extracted {len(parsed_content.get('flashcards', []))} flashcards")
+            
+            flashcards_count = len(parsed_content.get('flashcards', []))
+            logger.info(f"Successfully extracted {flashcards_count} flashcards")
+            
+            if flashcards_count == 0:
+                logger.warning("No flashcards found in parsed response")
+                
         except json.JSONDecodeError as e:
-            logger.warning(f"Failed to parse JSON response: {e}")
+            logger.error(f"Failed to parse JSON response: {e}")
+            logger.error(f"Raw content: {result['content']}")
+            result["parsing_error"] = str(e)
+            result["parsed_flashcards"] = None
+            
+        except Exception as e:
+            logger.error(f"Unexpected error parsing flashcards: {e}")
             result["parsing_error"] = str(e)
             result["parsed_flashcards"] = None
             

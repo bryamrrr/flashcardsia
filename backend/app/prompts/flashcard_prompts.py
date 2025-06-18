@@ -13,7 +13,9 @@ INSTRUCCIONES:
 5. Asegúrate de que las flashcards sean útiles para el aprendizaje
 
 FORMATO DE RESPUESTA:
-Responde ÚNICAMENTE en formato JSON con la siguiente estructura:
+Responde ÚNICAMENTE con JSON válido. NO uses bloques de código markdown (```). NO agregues texto adicional antes o después del JSON.
+
+Estructura JSON requerida:
 {{
   "flashcards": [
     {{
@@ -30,7 +32,7 @@ Responde ÚNICAMENTE en formato JSON con la siguiente estructura:
 TEXTO A PROCESAR:
 {text}
 
-Extrae exactamente {num_pairs} pares de Q&A del texto anterior:
+Extrae exactamente {num_pairs} pares de Q&A del texto anterior. Responde solo con el JSON:
 """
 
 IMPROVE_FLASHCARD_PROMPT = """
@@ -45,7 +47,9 @@ INSTRUCCIONES:
 2. Mejora la respuesta para que sea más concisa y memorable
 3. Asegúrate de que la flashcard sea educativamente efectiva
 
-FORMATO DE RESPUESTA (JSON):
+FORMATO DE RESPUESTA:
+Responde ÚNICAMENTE con JSON válido. NO uses bloques de código markdown.
+
 {{
   "improved_flashcard": {{
     "question": "Pregunta mejorada",
@@ -67,7 +71,9 @@ CRITERIOS DE EVALUACIÓN:
 3. Utilidad educativa (1-10)
 4. Nivel de dificultad apropiado (1-10)
 
-FORMATO DE RESPUESTA (JSON):
+FORMATO DE RESPUESTA:
+Responde ÚNICAMENTE con JSON válido. NO uses bloques de código markdown.
+
 {{
   "evaluation": {{
     "clarity": 8,
