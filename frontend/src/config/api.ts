@@ -16,8 +16,8 @@ export const apiConfig = {
   baseURL: API_BASE_URL,
   environment: ENVIRONMENT,
   endpoints: {
-    uploadDocument: '/api/upload-document',
-    generateFlashcards: '/api/generate-flashcards',
+    uploadDocument: '/api/documents',
+    generateFlashcards: '/api/flashcards',
     health: '/health',
   },
 };

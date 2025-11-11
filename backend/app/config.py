@@ -3,7 +3,7 @@ Configuración centralizada para la aplicación
 """
 import os
 from typing import Optional
-from pydantic_settings import BaseSettings
+from pydantic_settings import BaseSettings, SettingsConfigDict
 
 
 class Settings(BaseSettings):
@@ -23,6 +23,11 @@ class Settings(BaseSettings):
     
     # Configuración de base de datos
     DATABASE_URL: Optional[str] = None
+    TEST_DATABASE_URL: Optional[str] = None
+    
+    # Configuración de autenticación
+    SECRET_KEY: str = "your_secret_key_here"
+    ACCESS_TOKEN_EXPIRE_MINUTES: int = 30
     
     # Configuración de CORS
     ALLOWED_ORIGINS: str = "http://localhost:3000"
@@ -33,11 +38,15 @@ class Settings(BaseSettings):
     
     # Configuración de archivos
     MAX_FILE_SIZE: int = 10 * 1024 * 1024  # 10MB
+    MAX_FILE_SIZE_MB: int = 10  # Tamaño máximo en MB
+    ALLOWED_FILE_TYPES: str = ".txt,.pdf,.docx,.md"
     UPLOAD_DIRECTORY: str = "uploads"
     
-    class Config:
-        env_file = ".env"
-        case_sensitive = True
+    model_config = SettingsConfigDict(
+        env_file=".env",
+        case_sensitive=True,
+        extra="ignore"  # Ignorar campos extra en lugar de fallar
+    )
     
     def get_database_url(self) -> str:
         """Obtiene la URL de la base de datos según el entorno"""

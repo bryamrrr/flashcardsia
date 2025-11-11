@@ -61,7 +61,7 @@ function FlashcardsPage() {
       setError(null);
 
       const response = await fetch(
-        buildApiUrl(`/api/generate-flashcards/${documentId}`)
+        buildApiUrl(`/api/flashcards/${documentId}`)
       );
 
       if (!response.ok) {

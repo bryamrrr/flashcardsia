@@ -92,7 +92,7 @@ async def create_doc(db: db_dependency, doc_request: DocRequest):
     db.refresh(doc_model)
     return doc_model
 
-@app.post("/api/upload-document", status_code=status.HTTP_201_CREATED)
+@app.post("/api/documents", status_code=status.HTTP_201_CREATED)
 async def upload_document(db: db_dependency, file: UploadFile = File(...)):
     """
     Endpoint para subir documentos (PDF, TXT) y guardar en base de datos
@@ -222,7 +222,7 @@ async def test_llm_integration():
             "test_text_length": len(sample_text)
         }
 
-@app.get("/api/generate-flashcards/{document_id}")
+@app.get("/api/flashcards/{document_id}")
 async def generate_flashcards(document_id: int, db: db_dependency):
     """
     Endpoint para generar flashcards desde un documento existente

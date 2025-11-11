@@ -93,7 +93,7 @@ function HomePage() {
       const formData = new FormData();
       formData.append('file', uploadedFile);
 
-      const response = await fetch(buildApiUrl('/api/upload-document'), {
+      const response = await fetch(buildApiUrl('/api/documents'), {
         method: 'POST',
         body: formData,
       });
