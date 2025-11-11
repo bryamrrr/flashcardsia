@@ -7,9 +7,9 @@ import {
   ChevronRightIcon,
   RotateCcwIcon,
   AlertCircleIcon,
-  CheckCircleIcon,
   XCircleIcon,
 } from 'lucide-react';
+import { buildApiUrl } from '../config/api';
 
 interface Flashcard {
   question: string;
@@ -61,7 +61,7 @@ function FlashcardsPage() {
       setError(null);
 
       const response = await fetch(
-        `http://localhost:8000/api/generate-flashcards/${documentId}`
+        buildApiUrl(`/api/flashcards/${documentId}`)
       );
 
       if (!response.ok) {
@@ -315,22 +315,6 @@ function FlashcardsPage() {
             >
               <span>Siguiente</span>
               <ChevronRightIcon className="h-5 w-5" />
-            </button>
-          </div>
-
-          {/* Study Actions */}
-          <div className="grid grid-cols-1 gap-4 md:grid-cols-3">
-            <button className="flex items-center justify-center space-x-2 rounded-lg bg-green-50 p-4 text-green-700 transition-colors hover:bg-green-100">
-              <CheckCircleIcon className="h-5 w-5" />
-              <span>Fácil</span>
-            </button>
-            <button className="flex items-center justify-center space-x-2 rounded-lg bg-yellow-50 p-4 text-yellow-700 transition-colors hover:bg-yellow-100">
-              <RotateCcwIcon className="h-5 w-5" />
-              <span>Revisar</span>
-            </button>
-            <button className="flex items-center justify-center space-x-2 rounded-lg bg-red-50 p-4 text-red-700 transition-colors hover:bg-red-100">
-              <XCircleIcon className="h-5 w-5" />
-              <span>Difícil</span>
             </button>
           </div>
 
