@@ -12,12 +12,14 @@ from .database import engine, session_local
 from .documents_class import DocRequest
 from .services.document_service import document_service
 from .config import settings
+from .schemas import UserRegister, UserResponse, UserLogin
 from fastapi import Depends, FastAPI, File, HTTPException, UploadFile
 from fastapi.middleware.cors import CORSMiddleware
 from .services.llm_service import llm_service
 from sqlalchemy.orm import Session
 from starlette import status
 import logging
+from passlib.context import CryptContext
 
 # Creamos directorio para archivos
 UPLOAD_DIRECTORY = settings.UPLOAD_DIRECTORY
@@ -26,6 +28,9 @@ Path(UPLOAD_DIRECTORY).mkdir(exist_ok=True)
 # Configurar el logger
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
+
+# Configurar contexto de encriptación de contraseñas
+pwd_context = CryptContext(schemes=["pbkdf2_sha256"], deprecated="auto")
 
 # Abrir y cerrar conexión
 def get_db():
@@ -76,6 +81,61 @@ async def health_check():
         "environment": settings.ENVIRONMENT,
         "version": settings.APP_VERSION
     }
+
+@app.post("/api/auth/register", status_code=status.HTTP_201_CREATED, response_model=UserResponse)
+async def register_user(user: UserRegister, db: db_dependency):
+    """Endpoint para registrar un nuevo usuario"""
+    # Verificar si el usuario ya existe
+    existing_user = db.query(models.User).filter(models.User.username == user.username).first()
+    if existing_user:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="El nombre de usuario ya está en uso"
+        )
+    
+    # Hash de la contraseña
+    hashed_password = pwd_context.hash(user.password)
+    
+    # Crear nuevo usuario
+    new_user = models.User(
+        username=user.username,
+        hashed_password=hashed_password
+    )
+    
+    db.add(new_user)
+    db.commit()
+    db.refresh(new_user)
+    
+    return UserResponse(
+        id=new_user.id,
+        username=new_user.username,
+        created_at=new_user.created_at.isoformat()
+    )
+
+@app.post("/api/auth/login", response_model=UserResponse)
+async def login_user(user: UserLogin, db: db_dependency):
+    """Endpoint para iniciar sesión"""
+    # Buscar el usuario por username
+    db_user = db.query(models.User).filter(models.User.username == user.username.lower()).first()
+    
+    if not db_user:
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Usuario o contraseña incorrectos"
+        )
+    
+    # Verificar la contraseña
+    if not pwd_context.verify(user.password, db_user.hashed_password):
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Usuario o contraseña incorrectos"
+        )
+    
+    return UserResponse(
+        id=db_user.id,
+        username=db_user.username,
+        created_at=db_user.created_at.isoformat()
+    )
 
 @app.get("/api/documents", status_code=status.HTTP_200_OK)
 async def read_docs(db: db_dependency):
