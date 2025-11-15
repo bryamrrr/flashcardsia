@@ -1,4 +1,4 @@
-import { useState, useRef } from 'react';
+import { useState, useRef, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import {
   BrainIcon,
@@ -7,8 +7,19 @@ import {
   UploadIcon,
   CheckCircleIcon,
   AlertCircleIcon,
+  UserPlusIcon,
+  LogInIcon,
 } from 'lucide-react';
 import { buildApiUrl } from '../config/api';
+import RegisterModal from '../components/RegisterModal';
+import LoginModal from '../components/LoginModal';
+import UserMenu from '../components/UserMenu';
+
+interface User {
+  id: number;
+  username: string;
+  created_at: string;
+}
 
 interface UploadResponse {
   success: boolean;
@@ -25,7 +36,35 @@ function HomePage() {
   const [uploadedFile, setUploadedFile] = useState<File | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [isDragOver, setIsDragOver] = useState(false);
+  const [isRegisterModalOpen, setIsRegisterModalOpen] = useState(false);
+  const [isLoginModalOpen, setIsLoginModalOpen] = useState(false);
+  const [currentUser, setCurrentUser] = useState<User | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
+
+  // Cargar usuario desde localStorage al montar el componente
+  useEffect(() => {
+    const userStr = localStorage.getItem('user');
+    if (userStr) {
+      try {
+        const user = JSON.parse(userStr);
+        setCurrentUser(user);
+      } catch (error) {
+        console.error('Error parsing user from localStorage:', error);
+        localStorage.removeItem('user');
+      }
+    }
+  }, []);
+
+  // Función para manejar el logout
+  const handleLogout = () => {
+    localStorage.removeItem('user');
+    setCurrentUser(null);
+  };
+
+  // Función para manejar el login exitoso
+  const handleLoginSuccess = (user: User) => {
+    setCurrentUser(user);
+  };
 
   const handleFileSelect = (file: File) => {
     // Validar tipo de archivo
@@ -126,14 +165,49 @@ function HomePage() {
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-indigo-50 via-white to-purple-50">
+      {/* Register Modal */}
+      <RegisterModal
+        isOpen={isRegisterModalOpen}
+        onClose={() => setIsRegisterModalOpen(false)}
+      />
+
+      {/* Login Modal */}
+      <LoginModal
+        isOpen={isLoginModalOpen}
+        onClose={() => setIsLoginModalOpen(false)}
+        onLoginSuccess={handleLoginSuccess}
+      />
+
       {/* Header */}
       <header className="glass-effect sticky top-0 z-50 border-b border-gray-200/50">
         <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
-          <div className="flex h-16 items-center justify-center">
+          <div className="flex h-16 items-center justify-between">
             <div className="flex items-center space-x-3">
               <BrainIcon className="text-primary-600 h-8 w-8" />
               <h1 className="text-xl font-bold text-gray-900">Flashcards AI</h1>
             </div>
+            
+            {/* Mostrar botones de auth o menú de usuario según el estado */}
+            {currentUser ? (
+              <UserMenu username={currentUser.username} onLogout={handleLogout} />
+            ) : (
+              <div className="flex items-center space-x-3">
+                <button
+                  onClick={() => setIsLoginModalOpen(true)}
+                  className="flex items-center space-x-2 rounded-lg border-2 border-blue-600 bg-white px-4 py-2 font-semibold text-blue-600 shadow-sm transition-all duration-300 hover:bg-blue-50 hover:shadow-md focus:ring-4 focus:ring-blue-300 focus:outline-none"
+                >
+                  <LogInIcon className="h-5 w-5" />
+                  <span>Iniciar Sesión</span>
+                </button>
+                <button
+                  onClick={() => setIsRegisterModalOpen(true)}
+                  className="flex items-center space-x-2 rounded-lg bg-gradient-to-r from-blue-600 to-indigo-600 px-4 py-2 font-semibold text-white shadow-md transition-all duration-300 hover:from-blue-700 hover:to-indigo-700 hover:shadow-lg focus:ring-4 focus:ring-blue-300 focus:outline-none"
+                >
+                  <UserPlusIcon className="h-5 w-5" />
+                  <span>Regístrate</span>
+                </button>
+              </div>
+            )}
           </div>
         </div>
       </header>

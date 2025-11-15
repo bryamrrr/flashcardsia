@@ -19,9 +19,20 @@ class LLMService:
     """Wrapper genérico para llamadas a LLM"""
     
     def __init__(self, api_key: Optional[str] = None):
-        self.client = openai.OpenAI(
-            api_key=api_key or settings.OPENAI_API_KEY
-        )
+        self._client = None
+        self._api_key = api_key or settings.OPENAI_API_KEY
+    
+    @property
+    def client(self):
+        """Lazy initialization del cliente OpenAI"""
+        if self._client is None:
+            if not self._api_key or self._api_key == "your_openai_api_key_here":
+                raise ValueError(
+                    "OpenAI API key no configurada. "
+                    "Por favor configura OPENAI_API_KEY en tu archivo .env"
+                )
+            self._client = openai.OpenAI(api_key=self._api_key)
+        return self._client
     
     def _extract_json_from_response(self, content: str) -> str:
         """
@@ -193,5 +204,5 @@ class LLMService:
         logger.info("=== END LLM RESPONSE LOG ===")
 
 
-# Instancia global del servicio
+# Instancia global del servicio (se crea lazy cuando se necesite)
 llm_service = LLMService() 
